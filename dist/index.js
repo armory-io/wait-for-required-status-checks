@@ -76,11 +76,14 @@ function run() {
 }
 const resolve = (client, owner, repo, pullRequestNumber) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
-    const { data: pullRequest } = yield wait_1.retry(5, () => client.pulls.get({
-        owner,
-        repo,
-        pull_number: pullRequestNumber
-    }));
+    const { data: pullRequest } = yield wait_1.retry(5, () => {
+        core.info(`Fetching PR #${pullRequestNumber} from ${owner}/${repo}`);
+        return client.pulls.get({
+            owner,
+            repo,
+            pull_number: pullRequestNumber
+        });
+    });
     const { data: branchProtection } = yield client.repos.getBranchProtection({
         owner,
         repo,
