@@ -5,8 +5,8 @@ inputs:
   token:
     description: 'The GitHub token to use for making API requests.'
     required: true
-  ref:
-    description: 'The Git ref of the commit you want to poll for passing checks.'
+  pull_request_number: 
+    required: true
   repo:
     description: 'The name of the GitHub repository you want to poll for a passing check.'
   owner:
