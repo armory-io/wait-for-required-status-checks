@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import {context} from '@actions/github'
 import {Octokit} from '@octokit/rest'
 import {poll} from './poll'
+import {retry} from './wait'
 
 async function run(): Promise<void> {
   try {
@@ -14,7 +15,7 @@ async function run(): Promise<void> {
       required: true
     })
 
-    const { ref, checks } = await resolve(client, owner, repo, pullRequestNumber)
+    const {ref, checks} = await resolve(client, owner, repo, pullRequestNumber)
     if (checks.length === 0) {
       core.info('No required status checks, not waiting')
       return
@@ -22,7 +23,7 @@ async function run(): Promise<void> {
 
     const result = await poll({
       client,
-      checks: checks,
+      checks,
       owner,
       repo,
       ref,
@@ -35,20 +36,29 @@ async function run(): Promise<void> {
   }
 }
 
-const resolve = async (client: Octokit, owner: string, repo: string, pullRequestNumber: number): Promise<{ ref: string, checks: string[] }> => {
-  const {data: pullRequest} = await client.pulls.get({
-    owner,
-    repo,
-    pull_number: pullRequestNumber
-  })
+export const resolve = async (
+  client: Octokit,
+  owner: string,
+  repo: string,
+  pullRequestNumber: number
+): Promise<{ref: string; checks: string[]}> => {
+  const {data: pullRequest} = await retry(5, () =>
+    client.pulls.get({
+      owner,
+      repo,
+      pull_number: pullRequestNumber
+    })
+  )
 
   const {data: branchProtection} = await client.repos.getBranchProtection({
     owner,
     repo,
     branch: pullRequest.base.ref
   })
-
-  return { ref: pullRequest.head.ref, checks: branchProtection.required_status_checks.contexts }
+  return {
+    ref: pullRequest.head.ref,
+    checks: branchProtection.required_status_checks?.contexts ?? []
+  }
 }
 
 run()
