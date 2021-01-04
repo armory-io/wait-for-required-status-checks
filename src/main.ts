@@ -2,7 +2,6 @@ import * as core from '@actions/core'
 import {context} from '@actions/github'
 import {Octokit} from '@octokit/rest'
 import {poll} from './poll'
-import {retry} from './wait'
 
 async function run(): Promise<void> {
   try {
