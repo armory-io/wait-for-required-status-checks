@@ -40,7 +40,6 @@ exports.resolve = void 0;
 const core = __importStar(__webpack_require__(186));
 const rest_1 = __webpack_require__(375);
 const poll_1 = __webpack_require__(498);
-const wait_1 = __webpack_require__(817);
 function run() {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
@@ -63,6 +62,7 @@ function run() {
             const result = yield poll_1.poll({
                 client,
                 checks,
+                pullRequestNumber,
                 owner,
                 repo,
                 ref,
@@ -78,13 +78,11 @@ function run() {
 }
 const resolve = (client, owner, repo, pullRequestNumber) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
-    const { data: pullRequest } = yield wait_1.retry(5, () => {
-        core.info(`Fetching PR #${pullRequestNumber} from ${owner}/${repo}`);
-        return client.pulls.get({
-            owner,
-            repo,
-            pull_number: pullRequestNumber
-        });
+    core.info(`Fetching PR #${pullRequestNumber} from ${owner}/${repo}`);
+    const { data: pullRequest } = yield client.pulls.get({
+        owner,
+        repo,
+        pull_number: pullRequestNumber
     });
     const { data: branchProtection } = yield client.repos.getBranchProtection({
         owner,
@@ -140,7 +138,7 @@ exports.poll = void 0;
 const core = __importStar(__webpack_require__(186));
 const wait_1 = __webpack_require__(817);
 const poll = (options) => __awaiter(void 0, void 0, void 0, function* () {
-    const { client, timeoutSeconds, intervalSeconds, owner, repo, ref, checks } = options;
+    const { client, pullRequestNumber, timeoutSeconds, intervalSeconds, owner, repo, ref, checks } = options;
     let now = new Date().getTime();
     const deadline = now + timeoutSeconds * 1000;
     while (now <= deadline) {
@@ -150,7 +148,8 @@ const poll = (options) => __awaiter(void 0, void 0, void 0, function* () {
             repo,
             ref
         });
-        const completedChecks = checks.filter(check => checkRuns.some(checkRun => checkRun.name === check && checkRun.status === 'completed'));
+        const checkRunsForPR = checkRuns.filter(checkRun => checkRun.pull_requests.some(pr => pr.number === pullRequestNumber));
+        const completedChecks = checks.filter(check => checkRunsForPR.some(checkRun => checkRun.name === check && checkRun.status === 'completed'));
         if (completedChecks.length === checks.length) {
             core.info(`All checks (${checks.join(', ')}) are done`);
             return 'success';
@@ -170,29 +169,10 @@ const diff = (left, right) => left.filter(el => !right.includes(el));
 /***/ }),
 
 /***/ 817:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+/***/ (function(__unused_webpack_module, exports) {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -203,8 +183,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.retry = exports.wait = void 0;
-const core = __importStar(__webpack_require__(186));
+exports.wait = void 0;
 function wait(milliseconds) {
     return __awaiter(this, void 0, void 0, function* () {
         return new Promise(resolve => {
@@ -216,22 +195,6 @@ function wait(milliseconds) {
     });
 }
 exports.wait = wait;
-const retry = (attempts, fn) => __awaiter(void 0, void 0, void 0, function* () {
-    while (true) {
-        attempts -= 1;
-        try {
-            return yield fn();
-        }
-        catch (e) {
-            if (attempts < 0) {
-                throw e;
-            }
-            core.info(`Attempt failed, ${attempts} attempts remaining: ${e.message}`);
-        }
-        yield wait(1000);
-    }
-});
-exports.retry = retry;
 
 
 /***/ }),
