@@ -5,6 +5,7 @@ import {wait} from './wait'
 export interface Options {
   client: Octokit
   checks: string[]
+  pullRequestNumber: number
   timeoutSeconds: number
   intervalSeconds: number
   owner: string
@@ -17,6 +18,7 @@ type Outcome = 'success' | 'timed_out'
 export const poll = async (options: Options): Promise<Outcome> => {
   const {
     client,
+    pullRequestNumber,
     timeoutSeconds,
     intervalSeconds,
     owner,
@@ -40,8 +42,9 @@ export const poll = async (options: Options): Promise<Outcome> => {
       ref
     })
 
+    const checkRunsForPR = checkRuns.filter(checkRun => checkRun.pull_requests.some(pr => pr.number === pullRequestNumber))
     const completedChecks = checks.filter(check =>
-      checkRuns.some(
+      checkRunsForPR.some(
         checkRun => checkRun.name === check && checkRun.status === 'completed'
       )
     )

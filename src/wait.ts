@@ -8,18 +8,3 @@ export async function wait(milliseconds: number): Promise<string> {
     setTimeout(() => resolve('done!'), milliseconds)
   })
 }
-
-export const retry = async <T> (attempts: number, fn: () => Promise<T>): Promise<T> => {
-  while (true) {
-    attempts -= 1
-    try {
-      return await fn()
-    } catch (e) {
-      if (attempts < 0) {
-        throw e
-      }
-      core.info(`Attempt failed, ${attempts} attempts remaining: ${e.message}`)
-    }
-    await wait(1000)
-  }
-}

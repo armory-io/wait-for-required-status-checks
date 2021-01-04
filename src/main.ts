@@ -27,6 +27,7 @@ async function run(): Promise<void> {
     const result = await poll({
       client,
       checks,
+      pullRequestNumber,
       owner,
       repo,
       ref,
@@ -45,13 +46,11 @@ export const resolve = async (
   repo: string,
   pullRequestNumber: number
 ): Promise<{ref: string; checks: string[]}> => {
-  const {data: pullRequest} = await retry(5, () => {
-    core.info(`Fetching PR #${pullRequestNumber} from ${owner}/${repo}`)
-    return client.pulls.get({
-      owner,
-      repo,
-      pull_number: pullRequestNumber
-    })
+   core.info(`Fetching PR #${pullRequestNumber} from ${owner}/${repo}`)
+   const { data: pullRequest } = await client.pulls.get({
+    owner,
+    repo,
+    pull_number: pullRequestNumber
   })
 
   const {data: branchProtection} = await client.repos.getBranchProtection({

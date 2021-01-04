@@ -10,6 +10,7 @@ const run = (checks: string[]) =>
   poll({
     client,
     checks,
+    pullRequestNumber: 1,
     timeoutSeconds: 3,
     intervalSeconds: 1,
     owner: 'danielpeach',
@@ -17,15 +18,20 @@ const run = (checks: string[]) =>
     ref: 'refs/heads/master'
   })
 
+const checkRun = (name: string, status: string) => ({
+  id: '1',
+  name, 
+  status,
+  pull_requests: [
+    { 'number': 1, },
+  ]
+})
+
 test('returns conclusion of completed check', async () => {
   client.checks.listForRef.mockResolvedValue({
     data: {
       check_runs: [
-        {
-          id: '1',
-          name: 'integration-test',
-          status: 'completed'
-        }
+        checkRun('integration-test', 'completed')
       ]
     }
   })
@@ -45,33 +51,21 @@ test('polls until check is completed', async () => {
     .mockResolvedValueOnce({
       data: {
         check_runs: [
-          {
-            id: '1',
-            name: 'integration-test',
-            status: 'pending'
-          }
+          checkRun('integration-test', 'pending')
         ]
       }
     })
     .mockResolvedValueOnce({
       data: {
         check_runs: [
-          {
-            id: '1',
-            name: 'integration-test',
-            status: 'pending'
-          }
+          checkRun('integration-test', 'pending')
         ]
       }
     })
     .mockResolvedValueOnce({
       data: {
         check_runs: [
-          {
-            id: '1',
-            name: 'integration-test',
-            status: 'completed'
-          }
+          checkRun('integration-test', 'completed')
         ]
       }
     })
@@ -86,11 +80,7 @@ test(`returns "timed_out" if exceeding deadline`, async () => {
   client.checks.listForRef.mockResolvedValue({
     data: {
       check_runs: [
-        {
-          id: '1',
-          name: 'integration-test',
-          status: 'pending'
-        }
+        checkRun('integration-test', 'pending')
       ]
     }
   })
