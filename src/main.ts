@@ -9,8 +9,11 @@ async function run(): Promise<void> {
     const token = core.getInput('token', {required: true})
     const client = new Octokit({auth: token})
 
-    const owner = core.getInput('owner') ?? context.repo.owner
-    const repo = core.getInput('repo') ?? context.repo.repo
+    const [owner, repo] = process.env['GITHUB_REPOSITORY']?.split('/') ?? []
+    if (!owner || !repo) {
+      core.setFailed('Could not resolve owner/repo')
+      return
+    }
     const pullRequestNumber = +core.getInput('pull_request_number', {
       required: true
     })

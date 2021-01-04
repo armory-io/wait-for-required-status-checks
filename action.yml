@@ -7,10 +7,6 @@ inputs:
     required: true
   pull_request_number: 
     required: true
-  repo:
-    description: 'The name of the GitHub repository you want to poll for a passing check.'
-  owner:
-    description: 'The owner of the GitHub repository you want to poll for a passing check.'
   timeoutSeconds:
     description: 'The number of seconds to wait for the check to complete.'
   intervalSeconds:
